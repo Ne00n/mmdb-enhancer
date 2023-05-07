@@ -22,8 +22,11 @@ with open('asn.dat') as file:
         if ";" in line: continue
         line = line.rstrip()
         subnet, asn = line.split("\t")
-        ips.append(subnet.split("/")[0])
-        sub[subnet.split("/")[0]] = subnet
+        ip, prefix = subnet.split("/")
+        ip = ip[:-1]
+        ip = f"{ip}1"
+        ips.append(ip)
+        sub[ip] = subnet
 
 def resolve(ip):
     try:    
@@ -39,6 +42,7 @@ def resolve(ip):
 readers = {verifyDB:geoip2.database.Reader(verifyDB),targetDB:geoip2.database.Reader(targetDB)}
 results = {"match":0,"correction":0,"fail":0,"unable":0}
 export = {}
+print("Enhancing...")
 for ip in ips:
     target,verify = resolve(ip)
     if target and not f"{target.location.latitude},{target.location.longitude}" in export: export[f"{target.location.latitude},{target.location.longitude}"] = []
@@ -51,6 +55,9 @@ for ip in ips:
             else:
                 results["correction"] += 1
                 export[f"{verify.location.latitude},{verify.location.longitude}"].append(sub[ip])
+        else:
+            export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
+            results["unable"] += 1
     elif target and verify is False:
         export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
         results["unable"] += 1
@@ -61,5 +68,6 @@ writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="Mah own .mm
 for location,subnets in export.items():
     location = location.split(",")
     writer.insert_network(IPSet(subnets), {'location':{"latitude":float(location[0]),"longitude":float(location[1])}})
+print("Writing enhance.mmdb")
 writer.to_db_file('enhance.mmdb')
 print(results)
