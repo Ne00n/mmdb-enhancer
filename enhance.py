@@ -56,6 +56,7 @@ for ip in ips:
                 if not target.continent.code in stats: stats[target.continent.code] = 0
                 stats[target.continent.code] +=1
                 results["correction"] += 1
+                print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip})")
                 export[f"{verify.location.latitude},{verify.location.longitude}"].append(sub[ip])
         else:
             export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
@@ -66,6 +67,7 @@ for ip in ips:
     else:
         results["fail"] += 1
 
+print("Building enhanced.mmdb")
 writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="enhanced.mmdb")
 for location,subnets in export.items():
     location = location.split(",")
