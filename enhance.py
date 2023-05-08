@@ -40,7 +40,7 @@ def resolve(ip):
     return target,verify
 
 readers = {verifyDB:geoip2.database.Reader(verifyDB),targetDB:geoip2.database.Reader(targetDB)}
-results = {"match":0,"correction":0,"fail":0,"unable":0,"scope":0}
+results,stats = {"match":0,"correction":0,"fail":0,"unable":0,"scope":0},{}
 export = {}
 print("Enhancing...")
 for ip in ips:
@@ -53,6 +53,8 @@ for ip in ips:
                 results["match"] += 1
                 export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
             else:
+                if not target.continent.code in stats: stats[target.continent.code] = 0
+                stats[target.continent.code] +=1
                 results["correction"] += 1
                 export[f"{verify.location.latitude},{verify.location.longitude}"].append(sub[ip])
         else:
@@ -71,3 +73,4 @@ for location,subnets in export.items():
 print("Writing enhance.mmdb")
 writer.to_db_file('enhance.mmdb')
 print(results)
+print(stats)
