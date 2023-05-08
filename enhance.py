@@ -2,17 +2,20 @@ from netaddr import IPNetwork, IPSet
 from mmdb_writer import MMDBWriter
 import geoip2.database, glob, sys
 
-verifyDB = "db/geo.mmdb"
-print(f"Using {verifyDB} for verfication")
-print(f"Please select db for modification")
-dbs = glob.glob("db/*.mmdb")
-for index, db in enumerate(dbs):
-    print(f"[{index}] {db}")
-targetDB = input('Please enter number: ')
-for index, db in enumerate(dbs):
-    if int(targetDB) == index: 
-        targetDB = dbs[index]
-        break
+def getDB(operation="verification"):
+    print(f"Please select db for {operation}")
+    dbs = glob.glob("db/*.mmdb")
+    for index, db in enumerate(dbs):
+        print(f"[{index}] {db}")
+    targetDB = input('Please enter number: ')
+    for index, db in enumerate(dbs):
+        if int(targetDB) == index: 
+            return dbs[index]
+
+verifyDB = getDB()
+print(f"Selected {verifyDB}")
+targetDB = getDB("modification")
+print(f"Selected {targetDB}")
 
 ips = []
 sub = {}
