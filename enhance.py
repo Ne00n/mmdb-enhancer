@@ -22,11 +22,8 @@ with open('asn.dat') as file:
         if ";" in line: continue
         line = line.rstrip()
         subnet, asn = line.split("\t")
-        ip, prefix = subnet.split("/")
-        ip = ip[:-1]
-        ip = f"{ip}1"
-        ips.append(ip)
-        sub[ip] = subnet
+        ips.append(subnet.split("/")[0])
+        sub[subnet.split("/")[0]] = subnet
 
 def resolve(ip):
     try:    
@@ -40,7 +37,7 @@ def resolve(ip):
     return target,verify
 
 readers = {verifyDB:geoip2.database.Reader(verifyDB),targetDB:geoip2.database.Reader(targetDB)}
-results = {"match":0,"correction":0,"fail":0,"unable":0}
+results = {"match":0,"correction":0,"fail":0,"unable":0,"scope":0}
 export = {}
 print("Enhancing...")
 for ip in ips:
@@ -57,7 +54,7 @@ for ip in ips:
                 export[f"{verify.location.latitude},{verify.location.longitude}"].append(sub[ip])
         else:
             export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
-            results["unable"] += 1
+            results["scope"] += 1
     elif target and verify is False:
         export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
         results["unable"] += 1
