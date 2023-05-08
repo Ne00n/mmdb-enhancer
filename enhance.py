@@ -66,7 +66,7 @@ for ip in ips:
     else:
         results["fail"] += 1
 
-writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="Mah own .mmdb")
+writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="enhanced.mmdb")
 for location,subnets in export.items():
     location = location.split(",")
     writer.insert_network(IPSet(subnets), {'location':{"latitude":float(location[0]),"longitude":float(location[1])}})
