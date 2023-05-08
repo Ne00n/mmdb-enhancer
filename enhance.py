@@ -70,7 +70,7 @@ writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="Mah own .mm
 for location,subnets in export.items():
     location = location.split(",")
     writer.insert_network(IPSet(subnets), {'location':{"latitude":float(location[0]),"longitude":float(location[1])}})
-print("Writing enhance.mmdb")
-writer.to_db_file('enhance.mmdb')
+print("Writing enhanced.mmdb")
+writer.to_db_file('enhanced.mmdb')
 print(results)
 print(stats)
