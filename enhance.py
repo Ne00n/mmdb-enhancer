@@ -1,5 +1,6 @@
-from mmdb_writer import MMDBWriter
 import geoip2.database, ipaddress, netaddr, glob, json, sys, os
+from aggregate_prefixes import aggregate_prefixes
+from mmdb_writer import MMDBWriter
 
 def getDB(operation="verification"):
     print(f"Please select db for {operation}")
@@ -97,7 +98,10 @@ print("Building enhanced.mmdb")
 writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="enhanced.mmdb")
 for location,subnets in export.items():
     location = location.split(",")
-    writer.insert_network(netaddr.IPSet(subnets), {'location':{"latitude":float(location[0]),"longitude":float(location[1])}})
+    aggregated = list(aggregate_prefixes(subnets))
+    tmpSubnets = []
+    for sub in aggregated: tmpSubnets.append(str(sub))
+    writer.insert_network(netaddr.IPSet(tmpSubnets), {'location':{"latitude":float(location[0]),"longitude":float(location[1])}})
 print("Writing enhanced.mmdb")
 writer.to_db_file('enhanced.mmdb')
 print(results)
