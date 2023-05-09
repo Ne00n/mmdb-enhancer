@@ -49,11 +49,11 @@ def resolve(ip):
     try:    
         target = readers[targetDB].city(ip)
     except:
-        return False,False
+        target = False
     try:
         verify = readers[verifyDB].city(ip)
     except:
-        return target,False
+        verify = False
     return target,verify
 
 readers = {verifyDB:geoip2.database.Reader(verifyDB),targetDB:geoip2.database.Reader(targetDB)}
@@ -84,6 +84,9 @@ for ip in ips:
     elif target and verify is False:
         export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
         results["unable"] += 1
+    elif verify and target is False:
+        export[f"{verify.location.latitude},{verify.location.longitude}"].append(sub[ip])
+        results["match"] += 1
     else:
         results["fail"] += 1
 
