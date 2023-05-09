@@ -13,9 +13,9 @@ def getDB(operation="verification"):
 
 def networkToSubs(subnet):
     sub, prefix = subnet.split("/")
-    if int(prefix) > 22: return [subnet]
+    if int(prefix) > (int(scope) -1): return [subnet]
     network = netaddr.IPNetwork(subnet)
-    return [str(sn) for sn in network.subnet(23)]
+    return [str(sn) for sn in network.subnet(int(scope))]
 
 verifyDB = getDB()
 print(f"Selected {verifyDB}")
@@ -23,7 +23,10 @@ targetDB = getDB("modification")
 print(f"Selected {targetDB}")
 print("Please select scope")
 print(f"[0] Dynamic (default)")
-print(f"[1] /23")
+print(f"[23] /23")
+print(f"[22] /22")
+print(f"[21] /21")
+print(f"[20] /20")
 scope = input('Please enter number: ')
 
 ips,sub = [],{}
@@ -36,7 +39,7 @@ with open('asn.dat') as file:
         if int(scope) == 0:
             ips.append(subnet.split("/")[0])
             sub[subnet.split("/")[0]] = subnet
-        elif int(scope) == 1:
+        else:
             subs = networkToSubs(subnet)
             for subnet in subs: 
                 ips.append(subnet.split("/")[0])
