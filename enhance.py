@@ -43,11 +43,8 @@ with open('asn.dat') as file:
             subs = networkToSubs(prefix)
             for subnet in subs: 
                 ip = subnet.split("/")[0]
-                if ipaddress.ip_address(ip).is_global:
-                    ips.append(ip)
-                    sub[ip] = subnet
-                else:
-                    print(f"{ip} is private, skipping")
+                ips.append(ip)
+                sub[ip] = subnet
 
 def resolve(ip):
     try:    
@@ -92,8 +89,9 @@ for ip in ips:
         export[f"{verify.location.latitude},{verify.location.longitude}"].append(sub[ip])
         results["match"] += 1
     else:
-        print(f"Failed to resolve {ip}")
-        results["fail"] += 1
+        if ipaddress.ip_address(ip).is_global:
+            print(f"Failed to resolve {ip}")
+            results["fail"] += 1
 
 print("Building enhanced.mmdb")
 writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="enhanced.mmdb")
