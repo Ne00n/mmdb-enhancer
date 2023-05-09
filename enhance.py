@@ -1,5 +1,5 @@
 from mmdb_writer import MMDBWriter
-import geoip2.database, netaddr, glob, json, sys, os
+import geoip2.database, ipaddress, netaddr, glob, json, sys, os
 
 def getDB(operation="verification"):
     print(f"Please select db for {operation}")
@@ -35,15 +35,19 @@ with open('asn.dat') as file:
     for line in file:
         if ";" in line: continue
         line = line.rstrip()
-        subnet, asn = line.split("\t")
+        prefix, asn = line.split("\t")
         if int(scope) == 0:
-            ips.append(subnet.split("/")[0])
-            sub[subnet.split("/")[0]] = subnet
+            ips.append(prefix.split("/")[0])
+            sub[prefix.split("/")[0]] = prefix
         else:
-            subs = networkToSubs(subnet)
+            subs = networkToSubs(prefix)
             for subnet in subs: 
-                ips.append(subnet.split("/")[0])
-                sub[subnet.split("/")[0]] = subnet
+                ip = subnet.split("/")[0]
+                if ipaddress.ip_address(ip).is_global:
+                    ips.append(ip)
+                    sub[ip] = subnet
+                else:
+                    print(f"{ip} is private, skipping")
 
 def resolve(ip):
     try:    
@@ -88,6 +92,7 @@ for ip in ips:
         export[f"{verify.location.latitude},{verify.location.longitude}"].append(sub[ip])
         results["match"] += 1
     else:
+        print(f"Failed to resolve {ip}")
         results["fail"] += 1
 
 print("Building enhanced.mmdb")
