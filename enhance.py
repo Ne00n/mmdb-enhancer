@@ -1,6 +1,5 @@
-from netaddr import IPNetwork, IPSet
 from mmdb_writer import MMDBWriter
-import geoip2.database, glob, sys
+import geoip2.database, netaddr, glob, json, sys, os
 
 def getDB(operation="verification"):
     print(f"Please select db for {operation}")
@@ -12,21 +11,36 @@ def getDB(operation="verification"):
         if int(targetDB) == index: 
             return dbs[index]
 
+def networkToSubs(subnet):
+    sub, prefix = subnet.split("/")
+    if int(prefix) > 22: return [subnet]
+    network = netaddr.IPNetwork(subnet)
+    return [str(sn) for sn in network.subnet(23)]
+
 verifyDB = getDB()
 print(f"Selected {verifyDB}")
 targetDB = getDB("modification")
 print(f"Selected {targetDB}")
+print("Please select scope")
+print(f"[0] Dynamic (default)")
+print(f"[1] /23")
+scope = input('Please enter number: ')
 
-ips = []
-sub = {}
-print("Building IP list")
+ips,sub = [],{}
+print("Building Query list")
 with open('asn.dat') as file:
     for line in file:
         if ";" in line: continue
         line = line.rstrip()
         subnet, asn = line.split("\t")
-        ips.append(subnet.split("/")[0])
-        sub[subnet.split("/")[0]] = subnet
+        if int(scope) == 0:
+            ips.append(subnet.split("/")[0])
+            sub[subnet.split("/")[0]] = subnet
+        elif int(scope) == 1:
+            subs = networkToSubs(subnet)
+            for subnet in subs: 
+                ips.append(subnet.split("/")[0])
+                sub[subnet.split("/")[0]] = subnet
 
 def resolve(ip):
     try:    
@@ -74,7 +88,7 @@ print("Building enhanced.mmdb")
 writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="enhanced.mmdb")
 for location,subnets in export.items():
     location = location.split(",")
-    writer.insert_network(IPSet(subnets), {'location':{"latitude":float(location[0]),"longitude":float(location[1])}})
+    writer.insert_network(netaddr.IPSet(subnets), {'location':{"latitude":float(location[0]),"longitude":float(location[1])}})
 print("Writing enhanced.mmdb")
 writer.to_db_file('enhanced.mmdb')
 print(results)
