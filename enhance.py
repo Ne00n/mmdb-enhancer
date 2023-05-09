@@ -52,12 +52,15 @@ for ip in ips:
             if target.continent.code == verify.continent.code:
                 results["match"] += 1
                 export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
-            else:
+            elif verify.location.accuracy_radius and verify.location.accuracy_radius < 150:
                 if not target.continent.code in stats: stats[target.continent.code] = 0
                 stats[target.continent.code] +=1
                 results["correction"] += 1
-                print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip})")
+                print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
                 export[f"{verify.location.latitude},{verify.location.longitude}"].append(sub[ip])
+            else:
+                export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
+                results["scope"] += 1
         else:
             export[f"{target.location.latitude},{target.location.longitude}"].append(sub[ip])
             results["scope"] += 1
