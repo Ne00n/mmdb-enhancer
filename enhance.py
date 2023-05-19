@@ -57,6 +57,10 @@ def resolve(ip):
         verify = False
     return target,verify
 
+def add(lat,long,resultType):
+    export[f"{lat},{long}"].append(sub[ip])
+    results[resultType] += 1
+
 readers = {verifyDB:geoip2.database.Reader(verifyDB),targetDB:geoip2.database.Reader(targetDB)}
 results,stats = {"match":0,"correction":0,"fail":0,"unable":0,"scope":0},{"country":{},"continent":{}}
 export = {}
@@ -73,35 +77,27 @@ for ip in ips:
         if not target.continent.code in ["OC","AN"]:
             if target.continent.code == verify.continent.code:
                 if target.country.iso_code == verify.country.iso_code:
-                    results["match"] += 1
-                    export[f"{targetLat},{targetLong}"].append(sub[ip])
+                    add(targetLat,targetLong,"match")
                 elif verify.location.accuracy_radius and verify.location.accuracy_radius < 15:
                     if not target.country.iso_code in stats["country"]: stats["country"][target.country.iso_code] = 0
                     stats["country"][target.country.iso_code] +=1
-                    results["correction"] += 1
                     print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
-                    export[f"{verifyLat},{verifyLong}"].append(sub[ip])
+                    add(verifyLat,verifyLong,"correction")
                 else:
-                    export[f"{targetLat},{targetLong}"].append(sub[ip])
-                    results["scope"] += 1
+                    add(targetLat,targetLong,"scope")
             elif verify.location.accuracy_radius and verify.location.accuracy_radius < 150:
                 if not target.continent.code in stats["continent"]: stats["continent"][target.continent.code] = 0
                 stats["continent"][target.continent.code] +=1
-                results["correction"] += 1
                 print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
-                export[f"{verifyLat},{verifyLong}"].append(sub[ip])
+                add(verifyLat,verifyLong,"correction")
             else:
-                export[f"{targetLat},{targetLong}"].append(sub[ip])
-                results["scope"] += 1
+                add(targetLat,targetLong,"scope")
         else:
-            export[f"{targetLat},{targetLong}"].append(sub[ip])
-            results["scope"] += 1
+            add(targetLat,targetLong,"scope")
     elif target and verify is False:
-        export[f"{targetLat},{targetLong}"].append(sub[ip])
-        results["unable"] += 1
+        add(targetLat,targetLong,"unable")
     elif verify and target is False:
-        export[f"{verifyLat},{verifyLong}"].append(sub[ip])
-        results["match"] += 1
+        add(verifyLat,verifyLong,"match")
     else:
         if ipaddress.ip_address(ip).is_global:
             print(f"Failed to resolve {ip}")
