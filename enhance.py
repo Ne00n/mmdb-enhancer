@@ -66,7 +66,7 @@ for ip in ips:
     if target and not f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}" in export: export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"] = []
     if verify and not f"{round(verify.location.latitude,2)},{round(verify.location.longitude,2)}" in export: export[f"{round(verify.location.latitude,2)},{round(verify.location.longitude,2)}"] = []
     if target and verify:
-        if target.continent.code not in ["OC","AN"]:
+        if not target.continent.code in ["OC","AN"]:
             if target.continent.code == verify.continent.code:
                 results["match"] += 1
                 export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"].append(sub[ip])
