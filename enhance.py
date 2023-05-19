@@ -63,40 +63,42 @@ export = {}
 print("Enhancing...")
 for ip in ips:
     target,verify = resolve(ip)
-    if target and not f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}" in export: export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"] = []
-    if verify and not f"{round(verify.location.latitude,2)},{round(verify.location.longitude,2)}" in export: export[f"{round(verify.location.latitude,2)},{round(verify.location.longitude,2)}"] = []
+    targetLat,targetLong = round(target.location.latitude,2),round(target.location.longitude,2)
+    verifyLat,verifyLong = round(verify.location.latitude,2),round(verify.location.longitude,2)
+    if target and not f"{targetLat},{targetLong}" in export: export[f"{targetLat},{targetLong}"] = []
+    if verify and not f"{verifyLat},{verifyLong}" in export: export[f"{verifyLat},{verifyLong}"] = []
     if target and verify:
         if not target.continent.code in ["OC","AN"]:
             if target.continent.code == verify.continent.code:
                 if target.country.iso_code == verify.country.iso_code:
                     results["match"] += 1
-                    export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"].append(sub[ip])
+                    export[f"{targetLat},{targetLong}"].append(sub[ip])
                 elif verify.location.accuracy_radius and verify.location.accuracy_radius < 15:
                     if not target.country.iso_code in stats["country"]: stats["country"][target.country.iso_code] = 0
                     stats["country"][target.country.iso_code] +=1
                     results["correction"] += 1
                     print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
-                    export[f"{round(verify.location.latitude,2)},{round(verify.location.longitude,2)}"].append(sub[ip])
+                    export[f"{verifyLat},{verifyLong}"].append(sub[ip])
                 else:
-                    export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"].append(sub[ip])
+                    export[f"{targetLat},{targetLong}"].append(sub[ip])
                     results["scope"] += 1
             elif verify.location.accuracy_radius and verify.location.accuracy_radius < 150:
                 if not target.continent.code in stats["continent"]: stats["continent"][target.continent.code] = 0
                 stats["continent"][target.continent.code] +=1
                 results["correction"] += 1
                 print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
-                export[f"{round(verify.location.latitude,2)},{round(verify.location.longitude,2)}"].append(sub[ip])
+                export[f"{verifyLat},{verifyLong}"].append(sub[ip])
             else:
-                export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"].append(sub[ip])
+                export[f"{targetLat},{targetLong}"].append(sub[ip])
                 results["scope"] += 1
         else:
-            export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"].append(sub[ip])
+            export[f"{targetLat},{targetLong}"].append(sub[ip])
             results["scope"] += 1
     elif target and verify is False:
-        export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"].append(sub[ip])
+        export[f"{targetLat},{targetLong}"].append(sub[ip])
         results["unable"] += 1
     elif verify and target is False:
-        export[f"{round(verify.location.latitude,2)},{round(verify.location.longitude,2)}"].append(sub[ip])
+        export[f"{verifyLat},{verifyLong}"].append(sub[ip])
         results["match"] += 1
     else:
         if ipaddress.ip_address(ip).is_global:
