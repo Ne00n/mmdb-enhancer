@@ -90,22 +90,17 @@ for ip in ips:
                 sta("country",target.country.iso_code)
                 add(verifyLat,verifyLong,"correction")
             #otherwise out of scope
-            else:
-                add(targetLat,targetLong,"scope")
+            else: add(targetLat,targetLong,"scope")
         elif verify.location.accuracy_radius and verify.location.accuracy_radius < 150:
             print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
             sta("continent",target.continent.code)
             add(verifyLat,verifyLong,"correction")
-        else:
-            add(targetLat,targetLong,"scope")
-    elif target and verify is False:
-        add(targetLat,targetLong,"unable")
-    elif verify and target is False:
-        add(verifyLat,verifyLong,"match")
-    else:
-        if ipaddress.ip_address(ip).is_global:
-            print(f"Failed to resolve {ip}")
-            results["fail"] += 1
+        else: add(targetLat,targetLong,"scope")
+    elif target and verify is False: add(targetLat,targetLong,"unable")
+    elif verify and target is False: add(verifyLat,verifyLong,"match")
+    elif ipaddress.ip_address(ip).is_global:
+        print(f"Failed to resolve {ip}")
+        results["fail"] += 1
 
 print("Building enhanced.mmdb")
 writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="enhanced.mmdb")
