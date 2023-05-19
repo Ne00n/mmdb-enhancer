@@ -78,24 +78,24 @@ for ip in ips:
         verifyLat,verifyLong = round(verify.location.latitude,2),round(verify.location.longitude,2)
         if not f"{verifyLat},{verifyLong}" in export: export[f"{verifyLat},{verifyLong}"] = []
     if target and verify:
-        if not target.continent.code in ["OC","AN"]:
-            if target.continent.code == verify.continent.code:
-                #check if countries match
-                if target.country.iso_code == verify.country.iso_code: add(targetLat,targetLong,"match")
-                #if they don't match, check if accuracy is less than 15ms before we override
-                elif verify.location.accuracy_radius and verify.location.accuracy_radius < 15:
-                    print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
-                    sta("country",target.country.iso_code)
-                    add(verifyLat,verifyLong,"correction")
-                #otherwise out of scope
-                else:
-                    add(targetLat,targetLong,"scope")
-            elif verify.location.accuracy_radius and verify.location.accuracy_radius < 150:
+        if target.continent.code in ["OC","AN"]: 
+            add(targetLat,targetLong,"scope")
+            continue
+        if target.continent.code == verify.continent.code:
+            #check if countries match
+            if target.country.iso_code == verify.country.iso_code: add(targetLat,targetLong,"match")
+            #if they don't match, check if accuracy is less than 15ms before we override
+            elif verify.location.accuracy_radius and verify.location.accuracy_radius < 15:
                 print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
-                sta("continent",target.continent.code)
+                sta("country",target.country.iso_code)
                 add(verifyLat,verifyLong,"correction")
+            #otherwise out of scope
             else:
                 add(targetLat,targetLong,"scope")
+        elif verify.location.accuracy_radius and verify.location.accuracy_radius < 150:
+            print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
+            sta("continent",target.continent.code)
+            add(verifyLat,verifyLong,"correction")
         else:
             add(targetLat,targetLong,"scope")
     elif target and verify is False:
