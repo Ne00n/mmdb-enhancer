@@ -58,7 +58,7 @@ def resolve(ip):
     return target,verify
 
 readers = {verifyDB:geoip2.database.Reader(verifyDB),targetDB:geoip2.database.Reader(targetDB)}
-results,stats = {"match":0,"correction":0,"fail":0,"unable":0,"scope":0},{}
+results,stats = {"match":0,"correction":0,"fail":0,"unable":0,"scope":0},{"country":{},"continent":{}}
 export = {}
 print("Enhancing...")
 for ip in ips:
@@ -68,11 +68,21 @@ for ip in ips:
     if target and verify:
         if not target.continent.code in ["OC","AN"]:
             if target.continent.code == verify.continent.code:
-                results["match"] += 1
-                export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"].append(sub[ip])
+                if target.country.iso_code == verify.country.iso_code:
+                    results["match"] += 1
+                    export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"].append(sub[ip])
+                elif verify.location.accuracy_radius and verify.location.accuracy_radius < 15:
+                    if not target.country.iso_code in stats["country"]: stats["country"][target.country.iso_code] = 0
+                    stats["country"][target.country.iso_code] +=1
+                    results["correction"] += 1
+                    print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
+                    export[f"{round(verify.location.latitude,2)},{round(verify.location.longitude,2)}"].append(sub[ip])
+                else:
+                    export[f"{round(target.location.latitude,2)},{round(target.location.longitude,2)}"].append(sub[ip])
+                    results["scope"] += 1
             elif verify.location.accuracy_radius and verify.location.accuracy_radius < 150:
-                if not target.continent.code in stats: stats[target.continent.code] = 0
-                stats[target.continent.code] +=1
+                if not target.continent.code in stats["continent"]: stats["continent"][target.continent.code] = 0
+                stats["continent"][target.continent.code] +=1
                 results["correction"] += 1
                 print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
                 export[f"{round(verify.location.latitude,2)},{round(verify.location.longitude,2)}"].append(sub[ip])
@@ -101,4 +111,5 @@ for location,subnets in export.items():
 print("Writing enhanced.mmdb")
 writer.to_db_file('enhanced.mmdb')
 print(results)
-print(stats)
+print(stats['continent'])
+print(stats['country'])
