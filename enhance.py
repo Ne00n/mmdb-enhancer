@@ -91,8 +91,8 @@ for ip in ips:
                 add(verifyLat,verifyLong,"correction")
             #otherwise out of scope
             else: add(targetLat,targetLong,"scope")
-        #if they don't match check if accuracy is less than 100ms before we override
-        elif verify.location.accuracy_radius and verify.location.accuracy_radius < 100:
+        #if they don't match check if accuracy is less than 30ms before we override
+        elif verify.location.accuracy_radius and verify.location.accuracy_radius < 30:
             print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
             sta("continent",target.continent.code)
             add(verifyLat,verifyLong,"correction")
