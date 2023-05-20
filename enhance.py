@@ -72,8 +72,11 @@ print("Enhancing...")
 for ip in ips:
     target,verify = resolve(ip)
     if target:
-        targetLat,targetLong = round(target.location.latitude,2),round(target.location.longitude,2)
-        if not f"{targetLat},{targetLong}" in export: export[f"{targetLat},{targetLong}"] = []
+        if not target.location.latitude: 
+            target = False
+        else:
+            targetLat,targetLong = round(target.location.latitude,2),round(target.location.longitude,2)
+            if not f"{targetLat},{targetLong}" in export: export[f"{targetLat},{targetLong}"] = []
     if verify:
         verifyLat,verifyLong = round(verify.location.latitude,2),round(verify.location.longitude,2)
         if not f"{verifyLat},{verifyLong}" in export: export[f"{verifyLat},{verifyLong}"] = []
