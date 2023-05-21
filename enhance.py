@@ -4,9 +4,6 @@ from mmdb_writer import MMDBWriter
 print("Loading config.json")
 with open('config.json') as f: config = json.load(f)
 
-print("Loading neighbors.json")
-with open('neighbors.json') as f: neighbors = json.load(f)
-
 def getDB(operation="verification"):
     print(f"Please select db for {operation}")
     dbs = glob.glob("db/*.mmdb")
@@ -98,13 +95,10 @@ for ip in ips:
             #check if countries match
             if target.country.iso_code == verify.country.iso_code: add(targetLat,targetLong,"match")
             #if they don't match, check if accuracy is less than 5ms before we override
-            elif verify.location.accuracy_radius and verify.location.accuracy_radius <= 15:
-                if target.country.iso_code in neighbors and verify.country.iso_code in neighbors[target.country.iso_code]:
-                    add(targetLat,targetLong,"match")
-                else:
-                    print(f"Corrected {target.continent.code}, {target.country.iso_code} to {verify.continent.code}, {verify.country.iso_code} ({ip}, {verify.location.accuracy_radius})")
-                    sta("country",target.country.iso_code)
-                    add(verifyLat,verifyLong,"correction")
+            elif verify.location.accuracy_radius and verify.location.accuracy_radius <= 10:
+                print(f"Corrected {target.continent.code}, {target.country.iso_code} to {verify.continent.code}, {verify.country.iso_code} ({ip}, {verify.location.accuracy_radius})")
+                sta("country",target.country.iso_code)
+                add(verifyLat,verifyLong,"correction")
             #otherwise out of scope
             else: add(targetLat,targetLong,"scope")
         #if they don't match check if accuracy is less than 30ms before we override
