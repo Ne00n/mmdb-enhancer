@@ -1,0 +1,9 @@
+{
+    "continent": {
+        "comment":"overrides the default 15ms",
+        "US":{"EU":60,"AS":60},
+        "EU":{"US":60,"SA":80},
+        "AS":{"US":60},
+        "SA":{"EU":80}       
+    }
+}

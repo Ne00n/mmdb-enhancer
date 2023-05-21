@@ -1,6 +1,9 @@
 import geoip2.database, ipaddress, netaddr, glob, json, sys, os
 from mmdb_writer import MMDBWriter
 
+print("Loading config.json")
+with open('config.json') as f: config = json.load(f)
+
 def getDB(operation="verification"):
     print(f"Please select db for {operation}")
     dbs = glob.glob("db/*.mmdb")
@@ -65,6 +68,10 @@ def sta(statsType,value):
     if not value in stats[statsType]: stats[statsType][value] = 0
     stats[statsType][value] +=1
 
+def grabLatency(origin,dest):
+    if origin in config['continent'] and dest in config['continent'][origin]: return config['continent'][origin][dest]
+    return 15
+
 readers = {verifyDB:geoip2.database.Reader(verifyDB),targetDB:geoip2.database.Reader(targetDB)}
 results,stats = {"match":0,"correction":0,"fail":0,"unable":0,"scope":0},{"country":{},"continent":{}}
 export = {}
@@ -87,15 +94,15 @@ for ip in ips:
         if target.continent.code == verify.continent.code:
             #check if countries match
             if target.country.iso_code == verify.country.iso_code: add(targetLat,targetLong,"match")
-            #if they don't match, check if accuracy is less than 15ms before we override
-            elif verify.location.accuracy_radius and verify.location.accuracy_radius < 15:
+            #if they don't match, check if accuracy is less than 5ms before we override
+            elif verify.location.accuracy_radius and verify.location.accuracy_radius <= 5:
                 print(f"Corrected {target.country.iso_code} to {verify.country.iso_code} ({ip}, {verify.location.accuracy_radius})")
                 sta("country",target.country.iso_code)
                 add(verifyLat,verifyLong,"correction")
             #otherwise out of scope
             else: add(targetLat,targetLong,"scope")
         #if they don't match check if accuracy is less than 30ms before we override
-        elif verify.location.accuracy_radius and verify.location.accuracy_radius < 30:
+        elif verify.location.accuracy_radius and verify.location.accuracy_radius <= grabLatency(target.continent.code,verify.continent.code):
             print(f"Corrected {target.continent.code} to {verify.continent.code} ({ip}, {verify.location.accuracy_radius})")
             sta("continent",target.continent.code)
             add(verifyLat,verifyLong,"correction")
