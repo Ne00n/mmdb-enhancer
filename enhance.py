@@ -84,7 +84,7 @@ for ip in ips:
         if not f"{targetLat},{targetLong}" in export: export[f"{targetLat},{targetLong}"] = []
     if verify and target:
         if target.country.iso_code == verify.country.iso_code:
-            add(targetLat,targetLong,"country")
+            add(targetLat,targetLong,"country match")
             continue
         
         dis = distance.distance((verify.location.latitude,verify.location.longitude), (target.location.latitude,target.location.longitude)).km
@@ -92,18 +92,19 @@ for ip in ips:
         if radius < 20: radius = (radius / 2) * 100
         if radius > 20: radius = (radius / 1.5) * 100
         if radius < 10: radius = 10
-        print(f"Radius {radius} from latency {verify.location.accuracy_radius}")
+        #print(f"Radius {radius} from latency {verify.location.accuracy_radius}")
 
         if dis <= radius:
-            print(f"Distance: {dis}")
-            print(f"Point is inside the {dis} km radius {ip} {target.country.iso_code} vs {verify.country.iso_code}")
-            add(targetLat,targetLong,"distance")
+            #print(f"Distance: {dis}")
+            #print(f"Point is inside the {dis} km radius {ip} {target.country.iso_code} vs {verify.country.iso_code}")
+            add(targetLat,targetLong,"in radius")
         else:
-            print(f"Distance: {dis}")
-            print(f"Point is outside the {dis} km radius {ip} {target.country.iso_code} vs {verify.country.iso_code}")
-            add(verifyLat,verifyLong,"correction")
-    elif target and verify is False: add(targetLat,targetLong,"unable")
-    elif verify and target is False: add(verifyLat,verifyLong,"match")
+            #print(f"Distance: {dis}")
+            #print(f"Point is outside the {dis} km radius {ip} {target.country.iso_code} vs {verify.country.iso_code}")
+            add(verifyLat,verifyLong,"corrected")
+            sta("country",target.country.iso_code)
+    elif target and verify is False: add(targetLat,targetLong,"verify no data")
+    elif verify and target is False: add(verifyLat,verifyLong,"target no data")
     elif ipaddress.ip_address(ip).is_global:
         print(f"Failed to resolve {ip}")
         results["fail"] += 1
