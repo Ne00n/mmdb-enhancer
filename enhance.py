@@ -1,5 +1,6 @@
-import geoip2.database, ipaddress, netaddr, glob, json, sys, os
+import geoip2.database, ipaddress, netaddr, glob, json, time, sys, os
 from mmdb_writer import MMDBWriter
+from geopy import distance
 
 print("Loading config.json")
 with open('config.json') as f: config = json.load(f)
@@ -62,51 +63,45 @@ def resolve(ip):
 
 def add(lat,long,resultType):
     export[f"{lat},{long}"].append(sub[ip])
+    if not resultType in results: results[resultType] = 0
     results[resultType] += 1
 
 def sta(statsType,value):
     if not value in stats[statsType]: stats[statsType][value] = 0
     stats[statsType][value] +=1
 
-def grabLatency(origin,dest):
-    if origin in config['continent'] and dest in config['continent'][origin]: return config['continent'][origin][dest]
-    return 15
-
 readers = {verifyDB:geoip2.database.Reader(verifyDB),targetDB:geoip2.database.Reader(targetDB)}
-results,stats = {"match":0,"correction":0,"fail":0,"unable":0,"scope":0},{"country":{},"continent":{}}
+results,stats = {"fail":0},{"country":{},"continent":{}}
 export = {}
 print("Enhancing...")
 for ip in ips:
     target,verify = resolve(ip)
-    if target:
-        if not target.location.latitude: 
-            target = False
-        else:
-            targetLat,targetLong = round(target.location.latitude,2),round(target.location.longitude,2)
-            if not f"{targetLat},{targetLong}" in export: export[f"{targetLat},{targetLong}"] = []
     if verify:
         verifyLat,verifyLong = round(verify.location.latitude,2),round(verify.location.longitude,2)
         if not f"{verifyLat},{verifyLong}" in export: export[f"{verifyLat},{verifyLong}"] = []
-    if target and verify:
-        if target.continent.code in ["OC","AN"]: 
-            add(targetLat,targetLong,"scope")
+    if target:
+        targetLat,targetLong = round(target.location.latitude,2),round(target.location.longitude,2)
+        if not f"{targetLat},{targetLong}" in export: export[f"{targetLat},{targetLong}"] = []
+    if verify and target:
+        if target.country.iso_code == verify.country.iso_code:
+            add(targetLat,targetLong,"country")
             continue
-        if target.continent.code == verify.continent.code:
-            #check if countries match
-            if target.country.iso_code == verify.country.iso_code: add(targetLat,targetLong,"match")
-            #if they don't match, check if accuracy is less than 5ms before we override
-            elif verify.location.accuracy_radius and verify.location.accuracy_radius <= 10:
-                print(f"Corrected {target.continent.code}, {target.country.iso_code} to {verify.continent.code}, {verify.country.iso_code} ({ip}, {verify.location.accuracy_radius})")
-                sta("country",target.country.iso_code)
-                add(verifyLat,verifyLong,"correction")
-            #otherwise out of scope
-            else: add(targetLat,targetLong,"scope")
-        #if they don't match check if accuracy is less than 30ms before we override
-        elif verify.location.accuracy_radius and verify.location.accuracy_radius <= grabLatency(target.continent.code,verify.continent.code):
-            print(f"Corrected {target.continent.code}, {target.country.iso_code} to {verify.continent.code}, {verify.country.iso_code} ({ip}, {verify.location.accuracy_radius})")
-            sta("continent",target.continent.code)
+        
+        dis = distance.distance((verify.location.latitude,verify.location.longitude), (target.location.latitude,target.location.longitude)).km
+        radius = verify.location.accuracy_radius
+        if radius < 20: radius = (radius / 2) * 100
+        if radius > 20: radius = (radius / 1.5) * 100
+        if radius < 10: radius = 10
+        print(f"Radius {radius} from latency {verify.location.accuracy_radius}")
+
+        if dis <= radius:
+            print(f"Distance: {dis}")
+            print(f"Point is inside the {dis} km radius {ip} {target.country.iso_code} vs {verify.country.iso_code}")
+            add(targetLat,targetLong,"distance")
+        else:
+            print(f"Distance: {dis}")
+            print(f"Point is outside the {dis} km radius {ip} {target.country.iso_code} vs {verify.country.iso_code}")
             add(verifyLat,verifyLong,"correction")
-        else: add(targetLat,targetLong,"scope")
     elif target and verify is False: add(targetLat,targetLong,"unable")
     elif verify and target is False: add(verifyLat,verifyLong,"match")
     elif ipaddress.ip_address(ip).is_global:
