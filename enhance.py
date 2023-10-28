@@ -1,6 +1,7 @@
 import geoip2.database, ipaddress, netaddr, glob, json, time, sys, os
 from mmdb_writer import MMDBWriter
 from geopy import distance
+from tqdm import tqdm
 
 print("Loading config.json")
 with open('config.json') as f: config = json.load(f)
@@ -15,9 +16,9 @@ def getDB(operation="verification"):
         if int(targetDB) == index: 
             return dbs[index]
 
-def networkToSubs(subnet):
+def networkToSubs(subnet,scope=24):
     sub, prefix = subnet.split("/")
-    if int(prefix) > (int(scope) -1): return [subnet]
+    if int(prefix) >= scope: return [subnet]
     network = netaddr.IPNetwork(subnet)
     return [str(sn) for sn in network.subnet(int(scope))]
 
@@ -25,30 +26,23 @@ verifyDB = getDB()
 print(f"Selected {verifyDB}")
 targetDB = getDB("modification")
 print(f"Selected {targetDB}")
-print("Please select scope")
-print(f"[0] Dynamic (default)")
-print(f"[23] /23")
-print(f"[22] /22")
-print(f"[21] /21")
-print(f"[20] /20")
-scope = input('Please enter number: ')
 
-ips,sub = [],{}
+ips,sub,smol = [],{},{"172.253.0.0/16":26}
+print("Loading asn.dat")
+with open('asn.dat') as f: asn = f.readlines()
 print("Building Query list")
-with open('asn.dat') as file:
-    for line in file:
-        if ";" in line: continue
-        line = line.rstrip()
-        prefix, asn = line.split("\t")
-        if int(scope) == 0:
-            ips.append(prefix.split("/")[0])
-            sub[prefix.split("/")[0]] = prefix
-        else:
-            subs = networkToSubs(prefix)
-            for subnet in subs: 
-                ip = subnet.split("/")[0]
-                ips.append(ip)
-                sub[ip] = subnet
+for line in tqdm(asn):
+    if ";" in line: continue
+    line = line.rstrip()
+    network, asn = line.split("\t")
+    if network in smol:
+        subs = networkToSubs(network,smol[network])
+    else:
+        subs = networkToSubs(network)
+    for subnet in subs: 
+        ip = subnet.split("/")[0]
+        ips.append(ip)
+        sub[ip] = subnet
 
 def resolve(ip):
     try:    
