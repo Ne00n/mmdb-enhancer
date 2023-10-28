@@ -68,7 +68,7 @@ readers = {verifyDB:geoip2.database.Reader(verifyDB),targetDB:geoip2.database.Re
 results,stats = {"fail":0},{"country":{},"continent":{}}
 export = {}
 print("Enhancing...")
-for ip in ips:
+for ip in tqdm(ips):
     target,verify = resolve(ip)
     if verify:
         verifyLat,verifyLong = round(verify.location.latitude,2),round(verify.location.longitude,2)
