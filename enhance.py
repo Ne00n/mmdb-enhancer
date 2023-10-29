@@ -27,7 +27,7 @@ print(f"Selected {verifyDB}")
 targetDB = getDB("modification")
 print(f"Selected {targetDB}")
 
-debug = ""
+debug,debugSubnet = "",""
 if len(sys.argv) > 1: 
     debug = sys.argv[1]
     print(f"Debugging {debug}")
@@ -51,6 +51,8 @@ for line in tqdm(asn):
         ip = subnet.split("/")[0]
         ips.append(ip)
         sub[ip] = subnet
+        if debug and ipaddress.IPv4Address(debug) in ipaddress.IPv4Network(subnet): debugSubnet = subnet
+
 
 def resolve(ip):
     try:    
@@ -63,7 +65,8 @@ def resolve(ip):
         verify = False
     return target,verify
 
-def add(lat,long,resultType):
+def add(lat,long,ip,debugSubnet,resultType):
+    if debug and sub[ip] == debugSubnet: print(f"{debugSubnet} status {resultType}")
     export[f"{lat},{long}"].append(sub[ip])
     if not resultType in results: results[resultType] = 0
     results[resultType] += 1
@@ -86,34 +89,36 @@ for ip in tqdm(ips):
         if not f"{targetLat},{targetLong}" in export: export[f"{targetLat},{targetLong}"] = []
     if verify and target:
         if target.country.iso_code == verify.country.iso_code:
-            add(targetLat,targetLong,"country match")
+            add(targetLat,targetLong,ip,debugSubnet,"country match")
             continue
         
-        dis = distance.distance((verify.location.latitude,verify.location.longitude), (target.location.latitude,target.location.longitude)).km
+        dis = round(distance.distance((verify.location.latitude,verify.location.longitude), (target.location.latitude,target.location.longitude)).km)
         radius = verify.location.accuracy_radius
-        if radius < 20: radius = (radius / 2) * 100
-        if radius > 20: radius = (radius / 1.5) * 100
+        if debug and sub[ip] == debugSubnet: print(f"Radius {radius}")
         if radius < 10: radius = 10
-        #print(f"Radius {radius} from latency {verify.location.accuracy_radius}")
+        elif radius < 20: radius = round((radius / 2) * 100)
+        elif radius > 20: radius = round((radius / 1.5) * 100)
+        if debug and sub[ip] == debugSubnet: print(f"Radius {radius} from latency {verify.location.accuracy_radius}")
 
         if dis <= radius:
-            #print(f"Distance: {dis}")
-            #print(f"Point is inside the {dis} km radius {ip} {target.country.iso_code} vs {verify.country.iso_code}")
-            add(targetLat,targetLong,"in radius")
+            if debug and sub[ip] == debugSubnet: 
+                print(f"Distance: {dis}")
+                print(f"Point is inside the {dis} km radius {ip} {target.country.iso_code} vs {verify.country.iso_code}")
+            add(targetLat,targetLong,ip,debugSubnet,"in radius")
         else:
             #print(f"Distance: {dis}")
             #print(f"Point is outside the {dis} km radius {ip} {target.country.iso_code} vs {verify.country.iso_code}")
-            add(verifyLat,verifyLong,"corrected")
+            add(verifyLat,verifyLong,ip,debugSubnet,"corrected")
             sta("country",target.country.iso_code)
-    elif target and verify is False: add(targetLat,targetLong,"verify no data")
-    elif verify and target is False: add(verifyLat,verifyLong,"target no data")
+    elif target and verify is False: add(targetLat,targetLong,ip,debugSubnet,"verify no data")
+    elif verify and target is False: add(verifyLat,verifyLong,ip,debugSubnet,"target no data")
     elif ipaddress.ip_address(ip).is_global:
         print(f"Failed to resolve {ip}")
         results["fail"] += 1
 
 print("Building enhanced.mmdb")
 writer = MMDBWriter(4, 'GeoIP2-City', languages=['EN'], description="enhanced.mmdb")
-for location,subnets in export.items():
+for location,subnets in tqdm(export.items()):
     location = location.split(",")
     writer.insert_network(netaddr.IPSet(subnets), {'location':{"latitude":float(location[0]),"longitude":float(location[1])}})
 print("Writing enhanced.mmdb")
