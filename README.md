@@ -1,7 +1,7 @@
 # mmdb-enhancer
 mmdb-enhancer
 
-![data mining](https://thumbs.gfycat.com/HopefulNarrowJuliabutterfly-size_restricted.gif)
+![data mining](https://i.imgur.com/rVSLmT1.gif)
 
 
 ## Prepare<br />
