@@ -1,4 +1,4 @@
-import geoip2.database, ipaddress, netaddr, glob, json, time, sys, os
+import geoip2.database, ipaddress, netaddr, pyasn, glob, json, time, sys, os
 from mmdb_writer import MMDBWriter
 from geopy import distance
 from tqdm import tqdm
@@ -27,6 +27,13 @@ print(f"Selected {verifyDB}")
 targetDB = getDB("modification")
 print(f"Selected {targetDB}")
 
+debug = ""
+if len(sys.argv) > 1: 
+    debug = sys.argv[1]
+    print(f"Debugging {debug}")
+    asndb = pyasn.pyasn('asn.dat')
+    lookup = asndb.lookup(debug)
+
 ips,sub,smol = [],{},{"172.253.0.0/16":26}
 print("Loading asn.dat")
 with open('asn.dat') as f: asn = f.readlines()
@@ -35,6 +42,7 @@ for line in tqdm(asn):
     if ";" in line: continue
     line = line.rstrip()
     network, asn = line.split("\t")
+    if debug and network != lookup[1]: continue
     if network in smol:
         subs = networkToSubs(network,smol[network])
     else:
